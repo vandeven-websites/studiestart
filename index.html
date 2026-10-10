@@ -68,6 +68,12 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;bord
 button:focus-visible,[data-c]:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 @media (max-width:480px){.games button:last-child:nth-child(odd){grid-column:1/-1}}
 @media (prefers-reduced-motion:reduce){button{transition:none}}
+.ball{color:#fff;border:none;border-radius:50% 50% 46% 46%;min-height:104px;padding:16px 14px;line-height:1.3;font-size:16px;animation:bob 2.6s ease-in-out infinite alternate}
+.ball:nth-child(2n){animation-delay:-1.1s}
+@keyframes bob{to{transform:translateY(-6px)}}
+.badges{display:flex;flex-wrap:wrap;gap:8px}.bdg{padding:6px 10px;border-radius:999px;border:2px solid var(--line);font-weight:700;font-size:14px}.bdg.on{background:var(--acc);border-color:var(--acc);color:#fff}.bdg.off{opacity:.45}
+html.big body{font-size:19px}html.big h1{font-size:34px}html.big h2{font-size:23px}
+@media (prefers-reduced-motion:reduce){.ball{animation:none}}
 </style></head><body><main id="app"></main>
 <script>
 const K='studiestart.v1';
@@ -133,10 +139,10 @@ function home(){
  <button class="tl t2" data-c="go('cat')"><span>📖</span>Boek kiezen<small>uit de lijst</small></button>
  <button class="tl t3" data-c="go('add',{own:'1'})"><span>📝</span>Eigen lijst<small>typ of plak woorden</small></button>
  <button class="tl t4" data-c="go('add',{photo:'1'})"><span>📷</span>Foto → lijst<small>maak een foto</small></button></div>
- <h2>Mijn boeken en lijsten</h2>
+ ${wotd()}${badges()}<h2>Mijn boeken en lijsten</h2>
  ${books.length?books.map(b=>bookCard(b)).join(''):'<p class="mut">Nog niks. Kies een boek of maak een lijst.</p>'}
  <div class="card"><b>💾 Back-up</b><p class="mut">Je lijsten staan alleen op dit apparaat. Maak een back-up om ze naar je andere apparaat te brengen.</p><div class="row"><button data-c="exportData()">⬇️ Back-up maken</button><button data-c="pickImport()">⬆️ Terugzetten</button></div><input type="file" id="imp" accept=".json,application/json" hidden></div>
- <div class="card"><b>⚙️ Instellingen</b><div class="row" style="margin-top:8px"><button class="sm" data-c="togSound()">${SOUND?'🔊 Geluid aan':'🔇 Geluid uit'}</button><span class="mut">Dagelijks doel:</span><select data-i="goal">${[10,20,50,100].map(v=>`<option ${v===GOAL?'selected':''}>${v}</option>`).join('')}</select><span class="mut">punten</span></div></div>`;
+ <div class="card"><b>⚙️ Instellingen</b><div class="row" style="margin-top:8px"><button class="sm" data-c="togSound()">${SOUND?'🔊 Geluid aan':'🔇 Geluid uit'}</button><span class="mut">Dagelijks doel:</span><select data-i="goal">${[10,20,50,100].map(v=>`<option ${v===GOAL?'selected':''}>${v}</option>`).join('')}</select><span class="mut">punten</span></div><div class="row" style="margin-top:8px"><span class="mut">Thema:</span><select data-i="theme"><option value="auto" ${THEME==='auto'?'selected':''}>Automatisch</option><option value="light" ${THEME==='light'?'selected':''}>Licht</option><option value="dark" ${THEME==='dark'?'selected':''}>Donker</option></select><span class="mut">Tekst:</span><select data-i="font"><option value="n" ${FONT==='n'?'selected':''}>Normaal</option><option value="l" ${FONT==='l'?'selected':''}>Groot</option></select></div></div>`;
  const im=document.getElementById('imp');if(im)im.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importData(f)}}
 function add(){
  const b=s.edit?books.find(x=>x.id===s.edit):null;
@@ -164,7 +170,7 @@ function doAdd(){let cards=parse(document.getElementById('tx').value);{const sn=
 
 function delCard(i){bk().cards.splice(i,1);save();book()}
 function start(t){let c=pool(bk());
- const need={flash:1,quiz:4,mem:4,type:1,race:4,tf:2,hang:1,scr:1,mat:3,sur:4,exam:1}[t]||1;
+ const need={flash:1,quiz:4,mem:4,type:1,race:4,tf:2,hang:1,scr:1,mat:3,sur:4,exam:1,pop:4,duel:4}[t]||1;
  if(!c.length){toast(s.hard?'Geen moeilijke woorden meer. Goed bezig! 🎉':'Geen woorden geselecteerd.');return}
  if(c.length<need){toast('Voeg minstens '+need+' woorden toe (of kies meer hoofdstukken).');return}
  c=c.map(x=>DIR==='d2t'?{t:x.d,d:x.t,_:x}:{t:x.t,d:x.d,_:x});
@@ -182,10 +188,12 @@ function start(t){let c=pool(bk());
  if(t==='mat'){const p=Q(15),rs=[];for(let i=0;i<p.length;i+=5)rs.push(p.slice(i,i+5));g={t,rs:rs.filter(r=>r.length>=2),r:0,score:0,wrong:0,sel:null};matNew()}
  if(t==='sur'){g={t,c,q:shuf(c),i:0,lives:3,score:0,pick:null};surQ()}
  if(t==='exam')g={t,deck:Q(20).map(AS),i:0,ans:[],done:false};
- if(t==='race'){g={t,c,left:60,score:0,wrong:0};raceQ();const gg=g;g.iv=setInterval(()=>{if(g!==gg){clearInterval(gg.iv);return}gg.left--;if(gg.left<=0){clearInterval(gg.iv);render()}else{const a=document.getElementById('rl');if(a)a.textContent=gg.left;const bi=document.querySelector&&document.querySelector('.bar i');if(bi)bi.style.width=gg.left/60*100+'%'}},1000)}
+ if(t==='pop'){g={t,c,left:30,score:0,streak:0,best:0,q:null};popQ();const gg=g;g.iv=setInterval(()=>{if(g!==gg){clearInterval(gg.iv);return}gg.left--;if(gg.left<=0){clearInterval(gg.iv);render()}else{const a=document.getElementById('pl');if(a)a.textContent=gg.left}},1000)}
+if(t==='duel'){g={t,c,n:0,total:Math.min(8,c.length),p:[0,0],turn:0,q:null,pick:null};duelQ()}
+if(t==='race'){g={t,c,left:60,score:0,wrong:0};raceQ();const gg=g;g.iv=setInterval(()=>{if(g!==gg){clearInterval(gg.iv);return}gg.left--;if(gg.left<=0){clearInterval(gg.iv);render()}else{const a=document.getElementById('rl');if(a)a.textContent=gg.left;const bi=document.querySelector&&document.querySelector('.bar i');if(bi)bi.style.width=gg.left/60*100+'%'}},1000)}
  render()}
 const hd=(t,pct)=>`<div class="row sp"><button class="g" data-c="${s.from==='games'?'backGames()':`go('book',{id:'${s.id}'})`}">← Stoppen</button><span class="mut">${t}</span></div>${pct!=null?`<div class="bar"><i style="width:${pct}%"></i></div>`:''}`;
-function game(){({flash,quiz,mem,type:gType,tf:gTf,hang:gHang,race:gRace,scr:gScr,mat:gMat,sur:gSur,exam:gExam})[g.t]()}
+function game(){({flash,quiz,mem,type:gType,tf:gTf,hang:gHang,race:gRace,scr:gScr,mat:gMat,sur:gSur,exam:gExam,pop:gPop,duel:gDuel})[g.t]()}
 function flash(){
  if(g.i>=g.deck.length){app.innerHTML=hd('Klaar!',100)+`<div class="card" data-win="1"><h2>🎉 Klaar</h2><p>Je wist ${g.know} van ${g.deck.length}.</p>
  ${g.miss.length?`<button class="p" data-c="flashAgain()">Herhaal ${g.miss.length} lastige</button> `:''}
@@ -224,12 +232,39 @@ function quizNext(){g.i++;g.pick=null;render()}
 let DIR='t2d';
 const nc=ch=>ch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const norm=x=>nc(x).replace(/[^\p{L}\p{N}\s]/gu,'').replace(/\s+/g,' ').trim();
+function popQ(){const q=g.c[Math.random()*g.c.length|0];g.q={q,opts:mkOpts(g.c,q)}}
+function popA(k){if(!g||g.t!=='pop'||g.left<=0||!g.q)return;const ok=g.q.opts[k]===g.q.q.d;mark(g.q.q,ok);if(ok){g.score++;g.streak++;g.best=Math.max(g.best,g.streak);addPts(1);snd(1)}else{g.streak=0;snd(0)}popQ();render()}
+function gPop(){
+ if(g.left<=0){const rec=bestUp('pop',g.score);app.innerHTML=hd('Klaar!',100)+`<div class="card" data-win="1"><h2>🎈 ${g.score} ballon${g.score===1?'':'nen'} geprikt</h2><p class="mut">Beste serie: ${g.best} op rij${rec}</p><button class="p" data-c="start('pop')">Nog een keer</button></div>`;return}
+ const q=g.q;
+ app.innerHTML=hd('🎈 Ballonpop',null)+`<div class="row sp" style="margin-top:8px"><b>⏱️ <span id="pl">${g.left}</span> s</b><span class="mut">Serie ${g.streak} · ${g.score} geprikt</span></div>
+ <div class="card" style="text-align:center"><p class="mut">Welke uitleg hoort bij dit woord?</p><h2>${esc(q.q.t)}</h2></div>
+ <div class="mem" style="grid-template-columns:repeat(2,1fr)">${q.opts.map((o,k)=>`<button class="ball t${k%4+1}" data-c="popA(${k})">${esc(o)}</button>`).join('')}</div>`}
+function duelQ(){const q=g.c[Math.random()*g.c.length|0];g.q={q,opts:mkOpts(g.c,q)};g.pick=null}
+function duelA(k){if(!g||g.t!=='duel'||g.pick!==null)return;g.pick=k;const ok=g.q.opts[k]===g.q.q.d;mark(g.q.q,ok);if(ok){g.p[g.turn]++;addPts(1);snd(1)}else snd(0);render()}
+function duelNext(){if(!g||g.t!=='duel')return;g.n++;g.turn=1-g.turn;if(g.n<g.total)duelQ();render()}
+function gDuel(){
+ const P=['🔵 Speler 1','🟠 Speler 2'];
+ if(g.n>=g.total){const w=g.p[0]>g.p[1]?'🏆 Speler 1 wint!':g.p[1]>g.p[0]?'🏆 Speler 2 wint!':'🤝 Gelijkspel!';app.innerHTML=hd('Klaar!',100)+`<div class="card" data-win="1"><h2>${w}</h2><p>${P[0]}: ${g.p[0]} · ${P[1]}: ${g.p[1]}</p><button class="p" data-c="start('duel')">Nog een duel</button></div>`;return}
+ const q=g.q;
+ const head=`<div class="row sp"><b>${P[0]}: ${g.p[0]}</b><b>${P[1]}: ${g.p[1]}</b></div>`;
+ let body;
+ if(g.pick===null){body=`<p class="mut" style="text-align:center">${P[g.turn]} is aan de beurt</p><div class="card" style="text-align:center"><h2>${esc(q.q.t)}</h2></div>${q.opts.map((o,k)=>`<button class="opt" data-c="duelA(${k})">${esc(o)}</button>`).join('')}`}
+ else{const ok=q.opts[g.pick]===q.q.d;body=`<div class="card" style="text-align:center"><h2>${esc(q.q.t)}</h2><p style="font-weight:600;color:var(--${ok?'ok':'bad'})">${ok?'✓ Goed!':'✗ Fout. Het juiste antwoord is: '+esc(q.q.d)}</p></div><button class="p" style="width:100%" data-c="duelNext()">Volgende →</button>`}
+ app.innerHTML=hd(`Vraag ${g.n+1} / ${g.total}`,g.n/g.total*100)+head+body}
+function badges(){const nb=books.filter(b=>b.id!=='demo').length,rec=BEST||{},st=dayState().streak;
+ const L=[['🌱','Eerste stap',PTS>=1],['🔥','Op dreef (3 dagen)',st>=3],['📅','Week-held (7 dagen)',st>=7],['💯','100 punten',PTS>=100],['📚','Boekenwurm (3 lijsten)',nb>=3],['⚡','Snelheidsduivel',(rec.race||0)>=20||(rec.pop||0)>=10]];
+ return `<div class="card"><b>🏅 Badges</b><div class="badges" style="margin-top:8px">${L.map(x=>`<span class="bdg ${x[2]?'on':'off'}">${x[0]} ${x[1]}</span>`).join('')}</div></div>`}
+function wotd(){const all=books.flatMap(b=>b.cards);if(!all.length)return '';const w=all[+iso(new Date()).replace(/-/g,'')%all.length];return `<div class="card"><b>✨ Woord van de dag</b><h2 style="margin-top:6px">${esc(w.t)}</h2><p class="mut" style="margin:0">${esc(w.d)}</p></div>`}
+async function copyTxt(){const b=bk();if(!b||!b.cards.length){toast('Deze lijst is nog leeg.');return}const txt=b.cards.map(c=>c.t+' = '+c.d).join('\n');try{await navigator.clipboard.writeText(txt);toast('Gekopieerd ✓')}catch(e){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e2){}t.remove();toast(ok?'Gekopieerd ✓':'Kopiëren lukt hier niet.')}}
+function setTheme(v){THEME=v;if(v==='light'||v==='dark')document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;try{localStorage.setItem('studiestart.theme',v)}catch(e){}render()}
+function setFont(v){FONT=v;document.documentElement.classList.toggle('big',v==='l');try{localStorage.setItem('studiestart.font',v)}catch(e){}render()}
 function games(){
  s.from='games';
  const ok=books.filter(b=>b.cards.length);
  if(!ok.length){app.innerHTML=`<button class="g" data-c="go('home')">← Terug</button><h1>🎮 Spelletjes</h1><div class="card">Je hebt nog geen woorden. Maak eerst een lijst, bijvoorbeeld met een foto.</div><button class="p" data-c="go('add',{photo:'1'})">📷 Lijst maken</button>`;return}
  if(!ok.find(b=>b.id===s.id))s.id=ok[0].id;
- const G=[['flash','🃏','Flitskaarten','Draai en leer'],['quiz','❓','Quiz','Meerkeuze'],['mem','🧠','Memory','Koppel de paren'],['type','⌨️','Typen','Typ het antwoord'],['race','⚡','Tijdrace','60 seconden'],['tf','✅','Waar of niet?','Klopt het?'],['hang','🔤','Galgje','Raad het woord'],['scr','🧩','Letters ordenen','Zet ze in volgorde'],['mat','🔗','Koppelen','Verbind de paren'],['sur','🔥','Overleven','3 levens'],['exam','📝','Proeftoets','Krijg een cijfer']];
+ const G=[['flash','🃏','Flitskaarten','Draai en leer'],['quiz','❓','Quiz','Meerkeuze'],['mem','🧠','Memory','Koppel de paren'],['type','⌨️','Typen','Typ het antwoord'],['race','⚡','Tijdrace','60 seconden'],['tf','✅','Waar of niet?','Klopt het?'],['hang','🔤','Galgje','Raad het woord'],['scr','🧩','Letters ordenen','Zet ze in volgorde'],['mat','🔗','Koppelen','Verbind de paren'],['sur','🔥','Overleven','3 levens'],['exam','📝','Proeftoets','Krijg een cijfer'],['pop','🎈','Ballonpop','Tik het goede ballon, 30 sec'],['duel','👥','Duel','Twee spelers, om de beurt']];
  app.innerHTML=`<button class="g" data-c="go('home')">← Terug</button><h1>🎮 Spelletjes</h1>
  <p class="mut">Kies je lijst</p><select data-i="src" style="width:100%">${ok.map(b=>`<option value="${b.id}" ${b.id===s.id?'selected':''}>${esc(b.title)} (${b.cards.length})</option>`).join('')}</select>
  <p class="mut">Richting</p><select data-i="dir" style="width:100%"><option value="t2d" ${DIR==='t2d'?'selected':''}>Woord → uitleg</option><option value="d2t" ${DIR==='d2t'?'selected':''}>Uitleg → woord</option></select>
@@ -280,6 +315,8 @@ async function readPhoto(files){
   const m={rate_limited:'Te veel pogingen. Wacht even en probeer opnieuw.',image_rejected:'Deze foto kan ik niet lezen. Probeer een andere (JPG of PNG).',cancelled:'Gestopt.'};
   st.textContent=m[e&&e.code]||'Er ging iets mis bij het lezen van de foto. Probeer het opnieuw.'}}
 let PTS=0;try{PTS=+localStorage.getItem('studiestart.pts')||0}catch(e){}
+let THEME='auto',FONT='n';try{THEME=localStorage.getItem('studiestart.theme')||'auto';FONT=localStorage.getItem('studiestart.font')||'n'}catch(e){}
+if(THEME==='light'||THEME==='dark')document.documentElement.dataset.theme=THEME;if(FONT==='l')document.documentElement.classList.add('big');
 const LEVELS=[[0,'🌱','Beginner'],[50,'🌿','Leerling'],[150,'🌟','Slimmerik'],[400,'🚀','Expert'],[1000,'👑','Meester']];
 const ICONS=[['Bedrijfseconomie','📊'],['Economie','💶'],['Wiskunde','➗'],['Nederlands','📚'],['Engels','🇬🇧'],['Frans','🇫🇷'],['Duits','🇩🇪'],['Biologie','🧬'],['NaSk','🔬'],['Natuurkunde','⚛️'],['Scheikunde','🧪'],['Aardrijkskunde','🌍'],['Geschiedenis','🏛️'],['Maatschappijleer','🤝'],['Mens & Maatschappij','🧑‍🤝‍🧑']];
 const COL=['#7c4dff','#ff7a59','#12b886','#339af0','#f783ac','#fab005'];
@@ -414,7 +451,7 @@ function chCard(b,h,N){
  ${n?`<details style="margin-top:10px" data-h="${h}" ${s.open===h?'open':''}><summary class="mut" style="cursor:pointer">Woorden bekijken en verplaatsen</summary><div class="wrap"><table>${idx.map(([c,i])=>`<tr><td><b>${esc(c.t)}</b></td><td>${esc(c.d)}<div class="row" style="margin-top:4px;gap:4px"><select class="mini" data-i="mv:${i}">${hOpt(c)}</select><select class="mini" data-i="mo:${i}">${oOpt(c)}</select></div></td><td><button class="g" data-c="delCard(${i})">✕</button></td></tr>`).join('')}</table></div></details>`:''}</div>`}
 function book(){const b=bk(),N=nch(b);
  app.innerHTML=`<button class="g" data-c="go('home')">← Alle boeken</button>${bookCard(b,true)}
- <div class="row" style="margin:12px 0"><button class="p" data-c="go('games',{id:'${b.id}'})">🎮 Spelen met dit boek</button><button data-c="go('add',{edit:'${b.id}'})">+ Woorden of foto</button></div>
+ <div class="row" style="margin:12px 0"><button class="p" data-c="go('games',{id:'${b.id}'})">🎮 Spelen met dit boek</button><button data-c="go('add',{edit:'${b.id}'})">+ Woorden of foto</button><button data-c="copyTxt()">📋 Kopieer als tekst</button></div>
  ${!b.cards.length&&!N?'<div class="card">Dit boek is nog leeg. Maak hoofdstukken aan (knop hieronder) en voeg de woorden toe: typ, plak of maak een foto.</div>':''}
  ${[...Array(N).keys()].map(i=>chCard(b,i+1,N)).join('')}${b.cards.some(c=>!c.h)?chCard(b,0,N):''}
  <div class="row"><button data-c="addCh(1)">+ Hoofdstuk</button><button data-c="addCh(5)">+ 5 hoofdstukken</button>${N&&!b.cards.some(c=>c.h===N)?'<button class="g" data-c="addCh(-1)">− Laatste weghalen</button>':''}</div>`}
@@ -435,7 +472,7 @@ function togHard(){s.hard=!s.hard;render()}function clearSel(){s.selH=[];s.selO=
 function backGames(){g=null;s.v='games';render()}
 let SOUND=true,AC=null,GOAL=20,BEST={};
 try{SOUND=localStorage.getItem('studiestart.sound')!=='0';GOAL=+localStorage.getItem('studiestart.goal')||20;BEST=JSON.parse(localStorage.getItem('studiestart.best'))||{}}catch(e){}
-function snd(k){if(!SOUND)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const seq=k===1?[[660,0],[880,.09]]:k===2?[[523,0],[659,.1],[784,.2],[1047,.3]]:[[196,0],[147,.12]];
+function snd(k){if(k<2&&navigator.vibrate){try{navigator.vibrate(k?25:[60,40,60])}catch(e){}}if(!SOUND)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const seq=k===1?[[660,0],[880,.09]]:k===2?[[523,0],[659,.1],[784,.2],[1047,.3]]:[[196,0],[147,.12]];
  seq.forEach(([f,t])=>{const o=AC.createOscillator(),gn=AC.createGain(),T=AC.currentTime+t;o.type=k===0?'triangle':'sine';o.frequency.value=f;gn.gain.setValueAtTime(.0001,T);gn.gain.exponentialRampToValueAtTime(.18,T+.02);gn.gain.exponentialRampToValueAtTime(.0001,T+.16);o.connect(gn);gn.connect(AC.destination);o.start(T);o.stop(T+.18)})}catch(e){}}
 function togSound(){SOUND=!SOUND;try{localStorage.setItem('studiestart.sound',SOUND?'1':'0')}catch(e){}if(SOUND)snd(1);render()}
 function bestUp(k,v){const old=BEST[k]||0;if(v>old){BEST[k]=v;try{localStorage.setItem('studiestart.best',JSON.stringify(BEST))}catch(e){}return old>0?' 🏆 Nieuw record!':''}return old?` (record: ${old})`:''}
@@ -488,12 +525,12 @@ function gExam(){
  const a=document.getElementById('ans');if(a)a.focus()}
 function examNext(){const e=document.getElementById('ans');g.ans.push(e?e.value:'');g.i++;
  if(g.i>=g.deck.length){let sc=0;g.deck.forEach((c,i)=>{const ok=accepts(g.ans[i],c.ans)===2;mark(c,ok);if(ok)sc++});addPts(sc*2);g.done=true}render()}
-const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto};
+const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto,popA,duelA,duelNext,setTheme,setFont,copyTxt};
 function run(c){let m;c=c.trim();
  if(m=c.match(/^go\('(\w+)'(?:,\{(id|edit|own|photo):'([^']*)'\})?\)/)){go(m[1],m[2]?{[m[2]]:m[3]}:{});return}
  if((m=c.match(/^(\w+)\(\s*'?([^')]*)'?\s*\)/))&&FN[m[1]]){const a=m[2];FN[m[1]](a===''?undefined:(isNaN(a)?a:+a))}}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-c]');if(t&&!t.disabled){e.preventDefault();run(t.getAttribute('data-c'))}});
-['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const t=e.target.closest&&e.target.closest('[data-i]');if(!t)return;const k=t.getAttribute('data-i');if(k==='src'){s.id=t.value;s.selH=[];s.selO=[];s.hard=false;render()}else if(k==='goal'){GOAL=+t.value||20;try{localStorage.setItem('studiestart.goal',GOAL)}catch(e){}render()}else if(k.indexOf('mv:')===0){const c=bk().cards[+k.slice(3)];if(c){const v=+t.value||0;if(v)c.h=v;else delete c.h;s.open=v;save();book()}}else if(k.indexOf('mo:')===0){const c=bk().cards[+k.slice(3)];if(c){if(t.value)c.o=t.value;else delete c.o;save();book()}}else if(k==='dir')DIR=t.value;else if(k==='lang'){OLANG=t.value;try{localStorage.setItem('studiestart.lang',OLANG)}catch(e){}}else setF()}));
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const t=e.target.closest&&e.target.closest('[data-i]');if(!t)return;const k=t.getAttribute('data-i');if(k==='src'){s.id=t.value;s.selH=[];s.selO=[];s.hard=false;render()}else if(k==='goal'){GOAL=+t.value||20;try{localStorage.setItem('studiestart.goal',GOAL)}catch(e){}render()}else if(k.indexOf('mv:')===0){const c=bk().cards[+k.slice(3)];if(c){const v=+t.value||0;if(v)c.h=v;else delete c.h;s.open=v;save();book()}}else if(k.indexOf('mo:')===0){const c=bk().cards[+k.slice(3)];if(c){if(t.value)c.o=t.value;else delete c.o;save();book()}}else if(k==='theme')setTheme(t.value);else if(k==='font')setFont(t.value);else if(k==='dir')DIR=t.value;else if(k==='lang'){OLANG=t.value;try{localStorage.setItem('studiestart.lang',OLANG)}catch(e){}}else setF()}));
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.tagName==='DETAILS'&&d.dataset.h!==undefined){const k=+d.dataset.h;if(d.open)s.open=k;else if(s.open===k)s.open=null}},true);
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-c]:not(button)')){e.preventDefault();run(e.target.getAttribute('data-c'));return}if(e.key==='Enter'&&e.target.id==='rn'&&s.ren){e.preventDefault();saveRen(s.ren);return}if(e.key==='Enter'&&e.target.id==='ans'&&g&&(g.t==='type'||g.t==='exam')){e.preventDefault();if(g.t==='exam')examNext();else checkType()}});
 render();
