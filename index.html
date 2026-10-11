@@ -74,7 +74,12 @@ button:focus-visible,[data-c]:focus-visible,input:focus-visible,select:focus-vis
 .badges{display:flex;flex-wrap:wrap;gap:8px}.bdg{padding:6px 10px;border-radius:999px;border:2px solid var(--line);font-weight:700;font-size:14px}.bdg.on{background:var(--acc);border-color:var(--acc);color:#fff}.bdg.off{opacity:.45}
 html.big body{font-size:19px}html.big h1{font-size:34px}html.big h2{font-size:23px}
 @media (prefers-reduced-motion:reduce){.ball{animation:none}}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;padding:0;font-size:22px;font-weight:800;z-index:25;box-shadow:var(--sh)}
+.fab.fi{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+.dlg{position:fixed;inset:0;background:rgba(20,18,43,.55);display:grid;place-items:center;z-index:40;padding:16px}.dlg[hidden]{display:none}
+.dcard{width:100%;max-width:520px;max-height:85vh;overflow:auto;margin:0}.dcard p{margin:8px 0}.dcard ol{padding-left:20px}
 </style></head><body><main id="app"></main>
+<button id="fq" class="fab" aria-label="Hulp: wat moet ik doen?" data-c="showHelp('help')">?</button><button id="fi" class="fab fi" aria-label="Beschrijving van dit scherm" data-c="showHelp('info')">ℹ</button><div id="dlg" class="dlg" hidden><div class="card dcard" role="dialog" aria-modal="true"><div id="dbody"></div><button class="p" style="width:100%;margin-top:14px" data-c="closeDlg()">Sluiten</button></div></div>
 <script>
 const K='studiestart.v1';
 const demo={id:'demo',title:'Voorbeeld: Biologie hoofdstuk 1',cards:[
@@ -93,7 +98,7 @@ function go(v,o){s=Object.assign({v},o||{});g=null;render();window.scrollTo(0,0)
 function parse(txt){const out=[];txt.split(/\r?\n/).forEach(l=>{l=l.replace(/^\uFEFF/,'').trim().replace(/^(?:\d{1,3}[.)]|[-•*])\s+/,'');if(!l)return;
  const m=l.match(/^(.+?)\s*(?:\t|=|:|;| - )\s*(.+)$/)||l.match(/^(.+?)\s*,\s*(.+)$/),q=x=>x.trim().replace(/^"|"$/g,'').trim();
  if(m&&q(m[1])&&q(m[2]))out.push({t:q(m[1]),d:q(m[2])})});return out}
-function render(){if(!TOK){terms();return}({home,book,add,game,cat,games})[s.v]();if(app.querySelector&&app.querySelector('[data-win]')){party();snd(2)}}
+function render(){if(!TOK){terms();return}({home,book,add,game,cat,games})[s.v]();const w=app.querySelector('[data-win]');if(w){if(g&&!g.cel){g.cel=1;party();snd(2)}w.insertAdjacentHTML('beforeend','<button class="sm" style="margin-top:10px" data-c="shareScore()">📤 Deel mijn score</button>')}}
 const LV={vmbo:4,havo:5,vwo:6},ALL=['vmbo','havo','vwo'],HV=['havo','vwo'];
 const S4=['A','B','C','D'];
 const M=[['Wiskunde','Getal & Ruimte',ALL,1,6,S4],['Wiskunde','Moderne Wiskunde',ALL,1,6,S4],
@@ -160,7 +165,7 @@ function add(){
  <textarea id="tx" placeholder="mitose = celdeling&#10;apple = appel"></textarea>
  <p id="pv" class="mut"></p><button class="p" data-c="doAdd()">Opslaan</button>`;
  const tx=document.getElementById('tx'),pv=document.getElementById('pv');
- const upd=()=>pv.textContent=parse(tx.value).length+' begrippen herkend';tx.oninput=upd;
+ const upd=()=>pv.textContent=new Set(parse(tx.value).map(c=>c.t+'¦'+c.d)).size+' begrippen herkend';tx.oninput=upd;
  ['ph','pf'].forEach(id=>{document.getElementById(id).onchange=e=>{const f=[...e.target.files];e.target.value='';handleFiles(f)}});
  getSample().then(sm=>{const r=document.getElementById('lgrow');if(sm&&r)r.style.display='none'})}
 function doAdd(){let cards=parse(document.getElementById('tx').value);{const sn=new Set();cards=cards.filter(c=>{const k=c.t+'¦'+c.d;if(sn.has(k))return false;sn.add(k);return true})}if(!cards.length){toast('Geen begrippen herkend. Gebruik "woord = uitleg" per regel.');return}
@@ -254,11 +259,39 @@ function gDuel(){
  app.innerHTML=hd(`Vraag ${g.n+1} / ${g.total}`,g.n/g.total*100)+head+body}
 function badges(){const nb=books.filter(b=>b.id!=='demo').length,rec=BEST||{},st=dayState().streak;
  const L=[['🌱','Eerste stap',PTS>=1],['🔥','Op dreef (3 dagen)',st>=3],['📅','Week-held (7 dagen)',st>=7],['💯','100 punten',PTS>=100],['📚','Boekenwurm (3 lijsten)',nb>=3],['⚡','Snelheidsduivel',(rec.race||0)>=20||(rec.pop||0)>=10]];
- return `<div class="card"><b>🏅 Badges</b><div class="badges" style="margin-top:8px">${L.map(x=>`<span class="bdg ${x[2]?'on':'off'}">${x[0]} ${x[1]}</span>`).join('')}</div></div>`}
+ return `<div class="card"><b>🏅 Badges</b><div class="badges" style="margin-top:8px">${L.map(x=>`<span class="bdg ${x[2]?'on':'off'}">${x[0]} ${x[1]}</span>`).join('')}</div><button class="sm" style="margin-top:10px" data-c="shareScore()">📤 Deel mijn score</button></div>`}
 function wotd(){const all=books.flatMap(b=>b.cards);if(!all.length)return '';const w=all[+iso(new Date()).replace(/-/g,'')%all.length];return `<div class="card"><b>✨ Woord van de dag</b><h2 style="margin-top:6px">${esc(w.t)}</h2><p class="mut" style="margin:0">${esc(w.d)}</p></div>`}
 async function copyTxt(){const b=bk();if(!b||!b.cards.length){toast('Deze lijst is nog leeg.');return}const txt=b.cards.map(c=>c.t+' = '+c.d).join('\n');try{await navigator.clipboard.writeText(txt);toast('Gekopieerd ✓')}catch(e){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e2){}t.remove();toast(ok?'Gekopieerd ✓':'Kopiëren lukt hier niet.')}}
 function setTheme(v){THEME=v;if(v==='light'||v==='dark')document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;try{localStorage.setItem('studiestart.theme',v)}catch(e){}render()}
 function setFont(v){FONT=v;document.documentElement.classList.toggle('big',v==='l');try{localStorage.setItem('studiestart.font',v)}catch(e){}render()}
+async function shareScore(){const w=app.querySelector('[data-win] h2');const res=w?w.textContent.trim():'';const st=dayState().streak;const txt=`🎓 StudieStart: ${res?res+' — ':''}${PTS} punten, ${st} ${st===1?'dag':'dagen'} op rij!`;const url=location.href.split('#')[0].split('?')[0];
+ try{if(navigator.share){await navigator.share({title:'StudieStart',text:txt,url});return}}catch(e){if(e&&e.name==='AbortError')return}
+ try{await navigator.clipboard.writeText(txt+' '+url);toast('Score gekopieerd ✓ plak hem waar je wilt')}catch(e){toast('Delen lukt hier niet.')}}
+const HELP={
+ home:['Start hier','Kies <b>Boek kiezen</b> voor een kant-en-klare lijst, <b>Eigen lijst</b> om zelf woorden te typen, of <b>Foto → lijst</b> om een foto van een woordenlijst te maken. Oefen met <b>Spelletjes</b>. Maak onderaan regelmatig een back-up, want je lijsten staan alleen op dit apparaat.'],
+ book:['Dit boek of deze lijst','Hier zie je alle begrippen per hoofdstuk. Met <b>+ Woorden of foto</b> voeg je er meer toe, met <b>Spelen met dit boek</b> oefen je, en met <b>Kopieer als tekst</b> neem je de lijst mee.'],
+ add:['Woorden toevoegen','Typ of plak je woorden, één per regel, als <i>woord = uitleg</i>. Tik daarna op <b>Opslaan</b>. Je ziet meteen hoeveel begrippen herkend zijn.'],
+ photo:['Foto → lijst','<ol><li>Tik op <b>📷 Foto maken</b> om een foto te maken, op <b>🖼️ Bestand kiezen</b> om een bestaande foto of een .txt/.csv-bestand te kiezen, of op <b>📋 Plakken</b> om een screenshot te plakken (op de laptop ook met Ctrl+V).</li><li>Kies bij <b>Taal in de foto</b> de juiste taal.</li><li>Wacht tot er <i>begrippen gevonden</i> staat. De eerste keer heb je internet nodig, omdat de leesmodule dan wordt gedownload.</li><li>Controleer het tekstvak. Verbeter fouten en haal rommel weg.</li><li>Tik op <b>Opslaan</b>.</li></ol><p>Tip: maak een scherpe foto, recht van boven, met goed licht. Handschrift wordt slecht herkend.</p>'],
+ games:['Spelletjes','Kies eerst je lijst en de richting (woord → uitleg of andersom). Tik daarna op een spel. Je punten tellen mee voor je dagdoel.'],
+ game:['Een spel','Beantwoord de vragen. Goede antwoorden leveren punten op. Met <b>← Stoppen</b> verlaat je het spel. Na afloop kun je je score delen.'],
+ cat:['Boek kiezen','Kies een niveau, leerjaar en vak en tik op <b>Toevoegen</b>. Staat jouw boek er niet bij? Dan voeg je het zelf toe.'],
+ faq:[['Hoe installeer ik de app?','Open de link in Chrome of Edge en kies "Installeren", of op de iPhone in Safari: Deel-knop > "Zet op beginscherm".'],
+  ['Gaat mijn data verloren?','Lijsten en punten staan alleen op dit apparaat. Maak regelmatig een back-up via het beginscherm.'],
+  ['Werkt het zonder internet?','Ja, na het eerste bezoek. Alleen de foto-leesmodule heeft de eerste keer internet nodig.'],
+  ['Hoe zet ik mijn lijsten op een ander apparaat?','Maak een back-up op het eerste apparaat en kies op het andere apparaat "Terugzetten".']]};
+const DESC={
+ home:'Het beginscherm. Hier zie je je punten, je reeks, je badges, het woord van de dag en je lijsten.',
+ book:'De begrippen van één boek of lijst, per hoofdstuk.',
+ add:'Hier voeg je woorden toe: typen, plakken, een bestand of een foto.',
+ games:'Hier kies je een lijst en een spel om mee te oefenen.',
+ game:'Een oefenspel. Je goede antwoorden tellen mee voor je punten en je dagdoel.',
+ cat:'Een lijst met kant-en-klare boeken per niveau en vak.'};
+function showHelp(k){const key=s.v==='add'&&s.photo?'photo':s.v;const b=document.getElementById('dbody');
+ if(k==='help'){const [t,x]=HELP[key]||HELP.home;b.innerHTML=`<h2>❓ ${t}</h2><div>${x}</div><h2 style="margin-top:16px">Veelgestelde vragen</h2>`+HELP.faq.map(([q,a])=>`<p><b>${q}</b><br><span class="mut">${a}</span></p>`).join('')}
+ else{b.innerHTML=`<h2>ℹ️ Beschrijving</h2><p>${DESC[key]||DESC.home}</p><p class="mut">StudieStart is een gratis app om woorden te leren met spelletjes en je eigen lijsten. Alles blijft op je eigen apparaat.</p>`}
+ document.getElementById('dlg').hidden=false}
+function closeDlg(){document.getElementById('dlg').hidden=true}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDlg()});
 function games(){
  s.from='games';
  const ok=books.filter(b=>b.cards.length);
@@ -525,7 +558,7 @@ function gExam(){
  const a=document.getElementById('ans');if(a)a.focus()}
 function examNext(){const e=document.getElementById('ans');g.ans.push(e?e.value:'');g.i++;
  if(g.i>=g.deck.length){let sc=0;g.deck.forEach((c,i)=>{const ok=accepts(g.ans[i],c.ans)===2;mark(c,ok);if(ok)sc++});addPts(sc*2);g.done=true}render()}
-const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto,popA,duelA,duelNext,setTheme,setFont,copyTxt};
+const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto,popA,duelA,duelNext,setTheme,setFont,copyTxt,shareScore,showHelp,closeDlg};
 function run(c){let m;c=c.trim();
  if(m=c.match(/^go\('(\w+)'(?:,\{(id|edit|own|photo):'([^']*)'\})?\)/)){go(m[1],m[2]?{[m[2]]:m[3]}:{});return}
  if((m=c.match(/^(\w+)\(\s*'?([^')]*)'?\s*\)/))&&FN[m[1]]){const a=m[2];FN[m[1]](a===''?undefined:(isNaN(a)?a:+a))}}
