@@ -74,14 +74,7 @@ button:focus-visible,[data-c]:focus-visible,input:focus-visible,select:focus-vis
 .badges{display:flex;flex-wrap:wrap;gap:8px}.bdg{padding:6px 10px;border-radius:999px;border:2px solid var(--line);font-weight:700;font-size:14px}.bdg.on{background:var(--acc);border-color:var(--acc);color:#fff}.bdg.off{opacity:.45}
 html.big body{font-size:19px}html.big h1{font-size:34px}html.big h2{font-size:23px}
 @media (prefers-reduced-motion:reduce){.ball{animation:none}}
-.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;padding:0;font-size:22px;font-weight:800;z-index:25;box-shadow:var(--sh)}
-.fab.fi{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
-.dlg{position:fixed;inset:0;background:rgba(20,18,43,.55);display:grid;place-items:center;z-index:40;padding:16px}.dlg[hidden]{display:none}
-.dcard{width:100%;max-width:520px;max-height:85vh;overflow:auto;margin:0}.dcard p{margin:8px 0}.dcard ol{padding-left:20px}
-#printArea{display:none}
-@media print{body>*:not(#printArea){display:none!important}#printArea{display:block!important;color:#000;background:#fff}#printArea p{margin:4px 0}}
 </style></head><body><main id="app"></main>
-<button id="fq" class="fab" aria-label="Hulp: wat moet ik doen?" data-c="showHelp('help')">?</button><button id="fi" class="fab fi" aria-label="Beschrijving van dit scherm" data-c="showHelp('info')">ℹ</button><div id="dlg" class="dlg" hidden><div class="card dcard" role="dialog" aria-modal="true"><div id="dbody"></div><button class="p" style="width:100%;margin-top:14px" data-c="closeDlg()">Sluiten</button></div></div>
 <script>
 const K='studiestart.v1';
 const demo={id:'demo',title:'Voorbeeld: Biologie hoofdstuk 1',cards:[
@@ -96,11 +89,11 @@ let s={v:'home'},g=null;
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const bk=()=>books.find(b=>b.id===s.id);
-function go(v,o){s=Object.assign({v},o||{});g=null;BQ='';render();window.scrollTo(0,0)}
+function go(v,o){s=Object.assign({v},o||{});g=null;render();window.scrollTo(0,0)}
 function parse(txt){const out=[];txt.split(/\r?\n/).forEach(l=>{l=l.replace(/^\uFEFF/,'').trim().replace(/^(?:\d{1,3}[.)]|[-•*])\s+/,'');if(!l)return;
  const m=l.match(/^(.+?)\s*(?:\t|=|:|;| - )\s*(.+)$/)||l.match(/^(.+?)\s*,\s*(.+)$/),q=x=>x.trim().replace(/^"|"$/g,'').trim();
  if(m&&q(m[1])&&q(m[2]))out.push({t:q(m[1]),d:q(m[2])})});return out}
-function render(){if(!TOK){terms();return}({home,book,add,game,cat,games})[s.v]();const w=app.querySelector('[data-win]');if(w){if(g&&!g.cel){g.cel=1;party();snd(2)}w.insertAdjacentHTML('beforeend','<button class="sm" style="margin-top:10px" data-c="shareScore()">📤 Deel mijn score</button>')}}
+function render(){if(!TOK){terms();return}({home,book,add,game,cat,games})[s.v]();if(app.querySelector&&app.querySelector('[data-win]')){party();snd(2)}}
 const LV={vmbo:4,havo:5,vwo:6},ALL=['vmbo','havo','vwo'],HV=['havo','vwo'];
 const S4=['A','B','C','D'];
 const M=[['Wiskunde','Getal & Ruimte',ALL,1,6,S4],['Wiskunde','Moderne Wiskunde',ALL,1,6,S4],
@@ -146,10 +139,10 @@ function home(){
  <button class="tl t2" data-c="go('cat')"><span>📖</span>Boek kiezen<small>uit de lijst</small></button>
  <button class="tl t3" data-c="go('add',{own:'1'})"><span>📝</span>Eigen lijst<small>typ of plak woorden</small></button>
  <button class="tl t4" data-c="go('add',{photo:'1'})"><span>📷</span>Foto → lijst<small>maak een foto</small></button></div>
- ${pomoCard()}${statsCard()}${lastCard()}${wotd()}${badges()}<h2>Mijn boeken en lijsten</h2>
- ${books.length?sortBooks().map(b=>bookCard(b)).join(''):'<p class="mut">Nog niks. Kies een boek of maak een lijst.</p>'}
+ ${wotd()}${badges()}<h2>Mijn boeken en lijsten</h2>
+ ${books.length?books.map(b=>bookCard(b)).join(''):'<p class="mut">Nog niks. Kies een boek of maak een lijst.</p>'}
  <div class="card"><b>💾 Back-up</b><p class="mut">Je lijsten staan alleen op dit apparaat. Maak een back-up om ze naar je andere apparaat te brengen.</p><div class="row"><button data-c="exportData()">⬇️ Back-up maken</button><button data-c="pickImport()">⬆️ Terugzetten</button></div><input type="file" id="imp" accept=".json,application/json" hidden></div>
- <div class="card"><b>⚙️ Instellingen</b><div class="row" style="margin-top:8px"><button class="sm" data-c="togSound()">${SOUND?'🔊 Geluid aan':'🔇 Geluid uit'}</button><span class="mut">Dagelijks doel:</span><select data-i="goal">${[10,20,50,100].map(v=>`<option ${v===GOAL?'selected':''}>${v}</option>`).join('')}</select><span class="mut">punten</span></div><div class="row" style="margin-top:8px"><span class="mut">Thema:</span><select data-i="theme"><option value="auto" ${THEME==='auto'?'selected':''}>Automatisch</option><option value="light" ${THEME==='light'?'selected':''}>Licht</option><option value="dark" ${THEME==='dark'?'selected':''}>Donker</option></select><span class="mut">Tekst:</span><select data-i="font"><option value="n" ${FONT==='n'?'selected':''}>Normaal</option><option value="l" ${FONT==='l'?'selected':''}>Groot</option></select><span class="mut">Trillen:</span><select data-i="vib"><option value="1" ${VIB?'selected':''}>Aan</option><option value="0" ${VIB?'':'selected'}>Uit</option></select></div></div>`;
+ <div class="card"><b>⚙️ Instellingen</b><div class="row" style="margin-top:8px"><button class="sm" data-c="togSound()">${SOUND?'🔊 Geluid aan':'🔇 Geluid uit'}</button><span class="mut">Dagelijks doel:</span><select data-i="goal">${[10,20,50,100].map(v=>`<option ${v===GOAL?'selected':''}>${v}</option>`).join('')}</select><span class="mut">punten</span></div><div class="row" style="margin-top:8px"><span class="mut">Thema:</span><select data-i="theme"><option value="auto" ${THEME==='auto'?'selected':''}>Automatisch</option><option value="light" ${THEME==='light'?'selected':''}>Licht</option><option value="dark" ${THEME==='dark'?'selected':''}>Donker</option></select><span class="mut">Tekst:</span><select data-i="font"><option value="n" ${FONT==='n'?'selected':''}>Normaal</option><option value="l" ${FONT==='l'?'selected':''}>Groot</option></select></div></div>`;
  const im=document.getElementById('imp');if(im)im.onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importData(f)}}
 function add(){
  const b=s.edit?books.find(x=>x.id===s.edit):null;
@@ -167,7 +160,7 @@ function add(){
  <textarea id="tx" placeholder="mitose = celdeling&#10;apple = appel"></textarea>
  <p id="pv" class="mut"></p><button class="p" data-c="doAdd()">Opslaan</button>`;
  const tx=document.getElementById('tx'),pv=document.getElementById('pv');
- const upd=()=>pv.textContent=new Set(parse(tx.value).map(c=>c.t+'¦'+c.d)).size+' begrippen herkend';tx.oninput=upd;
+ const upd=()=>pv.textContent=parse(tx.value).length+' begrippen herkend';tx.oninput=upd;
  ['ph','pf'].forEach(id=>{document.getElementById(id).onchange=e=>{const f=[...e.target.files];e.target.value='';handleFiles(f)}});
  getSample().then(sm=>{const r=document.getElementById('lgrow');if(sm&&r)r.style.display='none'})}
 function doAdd(){let cards=parse(document.getElementById('tx').value);{const sn=new Set();cards=cards.filter(c=>{const k=c.t+'¦'+c.d;if(sn.has(k))return false;sn.add(k);return true})}if(!cards.length){toast('Geen begrippen herkend. Gebruik "woord = uitleg" per regel.');return}
@@ -261,56 +254,11 @@ function gDuel(){
  app.innerHTML=hd(`Vraag ${g.n+1} / ${g.total}`,g.n/g.total*100)+head+body}
 function badges(){const nb=books.filter(b=>b.id!=='demo').length,rec=BEST||{},st=dayState().streak;
  const L=[['🌱','Eerste stap',PTS>=1],['🔥','Op dreef (3 dagen)',st>=3],['📅','Week-held (7 dagen)',st>=7],['💯','100 punten',PTS>=100],['📚','Boekenwurm (3 lijsten)',nb>=3],['⚡','Snelheidsduivel',(rec.race||0)>=20||(rec.pop||0)>=10]];
- badgeNew(L);return `<div class="card"><b>🏅 Badges</b><div class="badges" style="margin-top:8px">${L.map(x=>`<span class="bdg ${x[2]?'on':'off'}">${x[0]} ${x[1]}</span>`).join('')}</div><button class="sm" style="margin-top:10px" data-c="shareScore()">📤 Deel mijn score</button></div>`}
-function wotd(){const all=books.flatMap(b=>b.cards);if(!all.length)return '';const w=all[+iso(new Date()).replace(/-/g,'')%all.length];return `<div class="card"><b>✨ Woord van de dag</b><h2 style="margin-top:6px">${esc(w.t)}</h2><p class="mut" style="margin:0">${esc(w.d)}</p><button class="sm" style="margin-top:8px" data-c="sayWotd()">🔊 Voorlezen</button></div>`}
+ return `<div class="card"><b>🏅 Badges</b><div class="badges" style="margin-top:8px">${L.map(x=>`<span class="bdg ${x[2]?'on':'off'}">${x[0]} ${x[1]}</span>`).join('')}</div></div>`}
+function wotd(){const all=books.flatMap(b=>b.cards);if(!all.length)return '';const w=all[+iso(new Date()).replace(/-/g,'')%all.length];return `<div class="card"><b>✨ Woord van de dag</b><h2 style="margin-top:6px">${esc(w.t)}</h2><p class="mut" style="margin:0">${esc(w.d)}</p></div>`}
 async function copyTxt(){const b=bk();if(!b||!b.cards.length){toast('Deze lijst is nog leeg.');return}const txt=b.cards.map(c=>c.t+' = '+c.d).join('\n');try{await navigator.clipboard.writeText(txt);toast('Gekopieerd ✓')}catch(e){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e2){}t.remove();toast(ok?'Gekopieerd ✓':'Kopiëren lukt hier niet.')}}
 function setTheme(v){THEME=v;if(v==='light'||v==='dark')document.documentElement.dataset.theme=v;else delete document.documentElement.dataset.theme;try{localStorage.setItem('studiestart.theme',v)}catch(e){}render()}
 function setFont(v){FONT=v;document.documentElement.classList.toggle('big',v==='l');try{localStorage.setItem('studiestart.font',v)}catch(e){}render()}
-async function shareScore(){const w=app.querySelector('[data-win] h2');const res=w?w.textContent.trim():'';const st=dayState().streak;const txt=`🎓 StudieStart: ${res?res+' — ':''}${PTS} punten, ${st} ${st===1?'dag':'dagen'} op rij!`;const url=location.href.split('#')[0].split('?')[0];
- try{if(navigator.share){await navigator.share({title:'StudieStart',text:txt,url});return}}catch(e){if(e&&e.name==='AbortError')return}
- try{await navigator.clipboard.writeText(txt+' '+url);toast('Score gekopieerd ✓ plak hem waar je wilt')}catch(e){toast('Delen lukt hier niet.')}}
-const HELP={
- home:['Start hier','Kies <b>Boek kiezen</b> voor een kant-en-klare lijst, <b>Eigen lijst</b> om zelf woorden te typen, of <b>Foto → lijst</b> om een foto van een woordenlijst te maken. Oefen met <b>Spelletjes</b>. Maak onderaan regelmatig een back-up, want je lijsten staan alleen op dit apparaat.'],
- book:['Dit boek of deze lijst','Hier zie je alle begrippen per hoofdstuk. Met <b>+ Woorden of foto</b> voeg je er meer toe, met <b>Spelen met dit boek</b> oefen je, en met <b>Kopieer als tekst</b> neem je de lijst mee.'],
- add:['Woorden toevoegen','Typ of plak je woorden, één per regel, als <i>woord = uitleg</i>. Tik daarna op <b>Opslaan</b>. Je ziet meteen hoeveel begrippen herkend zijn.'],
- photo:['Foto → lijst','<ol><li>Tik op <b>📷 Foto maken</b> om een foto te maken, op <b>🖼️ Bestand kiezen</b> om een bestaande foto of een .txt/.csv-bestand te kiezen, of op <b>📋 Plakken</b> om een screenshot te plakken (op de laptop ook met Ctrl+V).</li><li>Kies bij <b>Taal in de foto</b> de juiste taal.</li><li>Wacht tot er <i>begrippen gevonden</i> staat. De eerste keer heb je internet nodig, omdat de leesmodule dan wordt gedownload.</li><li>Controleer het tekstvak. Verbeter fouten en haal rommel weg.</li><li>Tik op <b>Opslaan</b>.</li></ol><p>Tip: maak een scherpe foto, recht van boven, met goed licht. Handschrift wordt slecht herkend.</p>'],
- games:['Spelletjes','Kies eerst je lijst en de richting (woord → uitleg of andersom). Tik daarna op een spel. Je punten tellen mee voor je dagdoel.'],
- game:['Een spel','Beantwoord de vragen. Goede antwoorden leveren punten op. Met <b>← Stoppen</b> verlaat je het spel. Na afloop kun je je score delen.'],
- cat:['Boek kiezen','Kies een niveau, leerjaar en vak en tik op <b>Toevoegen</b>. Staat jouw boek er niet bij? Dan voeg je het zelf toe.'],
- faq:[['Hoe installeer ik de app?','Open de link in Chrome of Edge en kies "Installeren", of op de iPhone in Safari: Deel-knop > "Zet op beginscherm".'],
-  ['Gaat mijn data verloren?','Lijsten en punten staan alleen op dit apparaat. Maak regelmatig een back-up via het beginscherm.'],
-  ['Werkt het zonder internet?','Ja, na het eerste bezoek. Alleen de foto-leesmodule heeft de eerste keer internet nodig.'],
-  ['Hoe zet ik mijn lijsten op een ander apparaat?','Maak een back-up op het eerste apparaat en kies op het andere apparaat "Terugzetten".']]};
-const DESC={
- home:'Het beginscherm. Hier zie je je punten, je reeks, je badges, het woord van de dag en je lijsten.',
- book:'De begrippen van één boek of lijst, per hoofdstuk.',
- add:'Hier voeg je woorden toe: typen, plakken, een bestand of een foto.',
- games:'Hier kies je een lijst en een spel om mee te oefenen.',
- game:'Een oefenspel. Je goede antwoorden tellen mee voor je punten en je dagdoel.',
- cat:'Een lijst met kant-en-klare boeken per niveau en vak.'};
-function showHelp(k){const key=s.v==='add'&&s.photo?'photo':s.v;const b=document.getElementById('dbody');
- if(k==='help'){const [t,x]=HELP[key]||HELP.home;b.innerHTML=`<h2>❓ ${t}</h2><div>${x}</div><h2 style="margin-top:16px">Veelgestelde vragen</h2>`+HELP.faq.map(([q,a])=>`<p><b>${q}</b><br><span class="mut">${a}</span></p>`).join('')}
- else{b.innerHTML=`<h2>ℹ️ Beschrijving</h2><p>${DESC[key]||DESC.home}</p><p class="mut">StudieStart is een gratis app om woorden te leren met spelletjes en je eigen lijsten. Alles blijft op je eigen apparaat.</p>`}
- document.getElementById('dlg').hidden=false}
-function closeDlg(){document.getElementById('dlg').hidden=true}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDlg()});
-let BQ='';
-let POMO={on:false,left:1500,work:true,iv:null};
-function pomoFmt(n){return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
-function pomoCard(){return `<div class="card" style="text-align:center"><b>${POMO.work?'📚 Studeren':'☕ Pauze'}</b><h2 id="pt" style="margin:6px 0">${pomoFmt(POMO.left)}</h2><div class="row" style="justify-content:center"><button class="p" data-c="pomoToggle()">${POMO.on?'⏸ Pauze':'▶ Start'}</button><button class="g" data-c="pomoReset()">↺ Opnieuw</button></div></div>`}
-function pomoTick(){POMO.left--;if(POMO.left<=0){clearInterval(POMO.iv);POMO.work=!POMO.work;POMO.left=POMO.work?1500:300;POMO.on=false;snd(2);toast(POMO.work?'Pauze voorbij. Weer studeren!':'Tijd voor een pauze ☕');render();return}const el=document.getElementById('pt');if(el)el.textContent=pomoFmt(POMO.left)}
-function pomoToggle(){if(POMO.on){clearInterval(POMO.iv);POMO.on=false}else{POMO.on=true;POMO.iv=setInterval(pomoTick,1000)}render()}
-function pomoReset(){clearInterval(POMO.iv);POMO={on:false,left:1500,work:true,iv:null};render()}
-function statsCard(){const words=books.reduce((n,b)=>n+b.cards.length,0),learned=books.reduce((n,b)=>n+b.cards.filter(c=>known(c)).length,0);return `<div class="card"><b>📊 Jouw cijfers</b><div class="row sp" style="margin-top:8px"><span>📚 ${books.length} lijsten</span><span>🔤 ${words} begrippen</span></div><div class="row sp"><span>✅ ${learned} goed geleerd</span><span>⭐ ${PTS} punten</span></div></div>`}
-function lastCard(){let id='';try{id=localStorage.getItem('studiestart.last')||''}catch(e){}const b=books.find(x=>x.id===id);if(!b)return '';return `<div class="card book" style="border-left:6px solid ${col(b)}"><b>↩️ Verder waar je was</b><h2 style="margin:6px 0">${esc(b.title)}</h2><button class="p" data-c="go('book',{id:'${b.id}'})">Openen</button></div>`}
-function sortBooks(){return [...books].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0))}
-function pinBook(){const b=bk();if(!b)return;b.pin=!b.pin;save();book()}
-function filterBook(v){BQ=v.trim().toLowerCase();const pos=v.length;book();const q=document.getElementById('bq');if(q){q.value=v;q.focus();q.setSelectionRange(pos,pos)}}
-function printList(){const b=bk();if(!b||!b.cards.length){toast('Deze lijst is nog leeg.');return}let el=document.getElementById('printArea');if(!el){el=document.createElement('div');el.id='printArea';document.body.appendChild(el)}el.innerHTML=`<h1>${esc(b.title)}</h1>`+b.cards.map(c=>`<p><b>${esc(c.t)}</b> = ${esc(c.d)}</p>`).join('');window.print()}
-function sayWotd(){if(!('speechSynthesis' in window)){toast('Voorlezen werkt niet op dit apparaat.');return}const all=books.flatMap(b=>b.cards);if(!all.length)return;const w=all[+iso(new Date()).replace(/-/g,'')%all.length],b=books.find(x=>x.cards.includes(w))||{title:''},L=[['Engels','en-GB'],['Frans','fr-FR'],['Duits','de-DE'],['Spaans','es-ES']].find(x=>b.title.includes(x[0]));const u=new SpeechSynthesisUtterance(w.t);u.lang=L?L[1]:'nl-NL';speechSynthesis.cancel();speechSynthesis.speak(u)}
-function setVib(v){VIB=v==='1';try{localStorage.setItem('studiestart.vib',VIB?'1':'0')}catch(e){}render()}
-function badgeNew(L){let seen=null;try{seen=localStorage.getItem('studiestart.bdg')}catch(e){}const list=seen?JSON.parse(seen):null;const earned=L.filter(x=>x[2]).map(x=>x[1]);if(!list){try{localStorage.setItem('studiestart.bdg',JSON.stringify(earned))}catch(e){}return}const fresh=earned.filter(n=>!list.includes(n));if(!fresh.length)return;try{localStorage.setItem('studiestart.bdg',JSON.stringify(list.concat(fresh)))}catch(e){}setTimeout(()=>toast('🏅 Nieuwe badge: '+fresh[0]),400)}
-document.addEventListener('keydown',e=>{if(!s||s.v!=='game'||e.ctrlKey||e.metaKey||e.altKey)return;if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;if(/^[1-9]$/.test(e.key)){const el=app.querySelectorAll('.opt,.ball')[+e.key-1];if(el){e.preventDefault();el.click()}}else if(e.key==='Enter'){const p=app.querySelector('button.p');if(p){e.preventDefault();p.click()}}});
 function games(){
  s.from='games';
  const ok=books.filter(b=>b.cards.length);
@@ -368,7 +316,7 @@ async function readPhoto(files){
   st.textContent=m[e&&e.code]||'Er ging iets mis bij het lezen van de foto. Probeer het opnieuw.'}}
 let PTS=0;try{PTS=+localStorage.getItem('studiestart.pts')||0}catch(e){}
 let THEME='auto',FONT='n';try{THEME=localStorage.getItem('studiestart.theme')||'auto';FONT=localStorage.getItem('studiestart.font')||'n'}catch(e){}
-if(THEME==='light'||THEME==='dark')document.documentElement.dataset.theme=THEME;if(FONT==='l')document.documentElement.classList.add('big');let VIB=true;try{VIB=localStorage.getItem('studiestart.vib')!=='0'}catch(e){}
+if(THEME==='light'||THEME==='dark')document.documentElement.dataset.theme=THEME;if(FONT==='l')document.documentElement.classList.add('big');
 const LEVELS=[[0,'🌱','Beginner'],[50,'🌿','Leerling'],[150,'🌟','Slimmerik'],[400,'🚀','Expert'],[1000,'👑','Meester']];
 const ICONS=[['Bedrijfseconomie','📊'],['Economie','💶'],['Wiskunde','➗'],['Nederlands','📚'],['Engels','🇬🇧'],['Frans','🇫🇷'],['Duits','🇩🇪'],['Biologie','🧬'],['NaSk','🔬'],['Natuurkunde','⚛️'],['Scheikunde','🧪'],['Aardrijkskunde','🌍'],['Geschiedenis','🏛️'],['Maatschappijleer','🤝'],['Mens & Maatschappij','🧑‍🤝‍🧑']];
 const COL=['#7c4dff','#ff7a59','#12b886','#339af0','#f783ac','#fab005'];
@@ -491,7 +439,7 @@ const nch=b=>Math.max(b.nch||0,...b.cards.map(c=>c.h||0));
 function pool(b){let c=b.cards;if(s.selH&&s.selH.length)c=c.filter(x=>s.selH.includes(x.h||0));if(s.selO&&s.selO.length)c=c.filter(x=>s.selO.includes(x.o||''));if(s.hard)c=c.filter(isHard);return c}
 function mark(c,ok){const o=c&&c._;if(!o)return;if(ok)o.r=(o.r||0)+1;else o.w=(o.w||0)+1;save()}
 function chCard(b,h,N){
- const idx=b.cards.map((c,i)=>[c,i]).filter(x=>(x[0].h||0)===h&&(!BQ||(x[0].t+' '+x[0].d).toLowerCase().includes(BQ))),n=idx.length,kn=idx.filter(x=>known(x[0])).length,os={};
+ const idx=b.cards.map((c,i)=>[c,i]).filter(x=>(x[0].h||0)===h),n=idx.length,kn=idx.filter(x=>known(x[0])).length,os={};
  idx.forEach(x=>{const o=x[0].o||'';os[o]=(os[o]||0)+1});
  const chips=Object.keys(os).filter(Boolean).map(o=>`<span class="chip">${esc(o)} <small>(${os[o]})</small></span>`).join('');
  const hOpt=c=>`<option value="0">–</option>`+[...Array(N).keys()].map(i=>`<option value="${i+1}" ${(c.h||0)===i+1?'selected':''}>H${i+1}</option>`).join('');
@@ -501,10 +449,9 @@ function chCard(b,h,N){
  <div class="chips">${chips}</div>
  <div class="row" style="margin-top:10px">${n?`<button class="p" data-c="playCh('${b.id}:${h}')">▶ Oefenen</button>`:''}<button data-c="addTo('${b.id}:${h}')">+ Woorden</button></div>
  ${n?`<details style="margin-top:10px" data-h="${h}" ${s.open===h?'open':''}><summary class="mut" style="cursor:pointer">Woorden bekijken en verplaatsen</summary><div class="wrap"><table>${idx.map(([c,i])=>`<tr><td><b>${esc(c.t)}</b></td><td>${esc(c.d)}<div class="row" style="margin-top:4px;gap:4px"><select class="mini" data-i="mv:${i}">${hOpt(c)}</select><select class="mini" data-i="mo:${i}">${oOpt(c)}</select></div></td><td><button class="g" data-c="delCard(${i})">✕</button></td></tr>`).join('')}</table></div></details>`:''}</div>`}
-function book(){const b=bk(),N=nch(b);try{localStorage.setItem('studiestart.last',b.id)}catch(e){}
+function book(){const b=bk(),N=nch(b);
  app.innerHTML=`<button class="g" data-c="go('home')">← Alle boeken</button>${bookCard(b,true)}
- <div class="row" style="margin:12px 0"><button class="p" data-c="go('games',{id:'${b.id}'})">🎮 Spelen met dit boek</button><button data-c="go('add',{edit:'${b.id}'})">+ Woorden of foto</button><button data-c="copyTxt()">📋 Kopieer als tekst</button><button data-c="printList()">🖨️ Afdrukken</button><button data-c="pinBook()">${b.pin?'⭐ Vastgepind':'☆ Vastpinnen'}</button></div>
- <input id="bq" data-i="bq" placeholder="🔍 Zoek een woord…" value="${esc(BQ)}" style="margin-bottom:12px">
+ <div class="row" style="margin:12px 0"><button class="p" data-c="go('games',{id:'${b.id}'})">🎮 Spelen met dit boek</button><button data-c="go('add',{edit:'${b.id}'})">+ Woorden of foto</button><button data-c="copyTxt()">📋 Kopieer als tekst</button></div>
  ${!b.cards.length&&!N?'<div class="card">Dit boek is nog leeg. Maak hoofdstukken aan (knop hieronder) en voeg de woorden toe: typ, plak of maak een foto.</div>':''}
  ${[...Array(N).keys()].map(i=>chCard(b,i+1,N)).join('')}${b.cards.some(c=>!c.h)?chCard(b,0,N):''}
  <div class="row"><button data-c="addCh(1)">+ Hoofdstuk</button><button data-c="addCh(5)">+ 5 hoofdstukken</button>${N&&!b.cards.some(c=>c.h===N)?'<button class="g" data-c="addCh(-1)">− Laatste weghalen</button>':''}</div>`}
@@ -525,7 +472,7 @@ function togHard(){s.hard=!s.hard;render()}function clearSel(){s.selH=[];s.selO=
 function backGames(){g=null;s.v='games';render()}
 let SOUND=true,AC=null,GOAL=20,BEST={};
 try{SOUND=localStorage.getItem('studiestart.sound')!=='0';GOAL=+localStorage.getItem('studiestart.goal')||20;BEST=JSON.parse(localStorage.getItem('studiestart.best'))||{}}catch(e){}
-function snd(k){if(k<2&&navigator.vibrate&&VIB){try{navigator.vibrate(k?25:[60,40,60])}catch(e){}}if(!SOUND)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const seq=k===1?[[660,0],[880,.09]]:k===2?[[523,0],[659,.1],[784,.2],[1047,.3]]:[[196,0],[147,.12]];
+function snd(k){if(k<2&&navigator.vibrate){try{navigator.vibrate(k?25:[60,40,60])}catch(e){}}if(!SOUND)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const seq=k===1?[[660,0],[880,.09]]:k===2?[[523,0],[659,.1],[784,.2],[1047,.3]]:[[196,0],[147,.12]];
  seq.forEach(([f,t])=>{const o=AC.createOscillator(),gn=AC.createGain(),T=AC.currentTime+t;o.type=k===0?'triangle':'sine';o.frequency.value=f;gn.gain.setValueAtTime(.0001,T);gn.gain.exponentialRampToValueAtTime(.18,T+.02);gn.gain.exponentialRampToValueAtTime(.0001,T+.16);o.connect(gn);gn.connect(AC.destination);o.start(T);o.stop(T+.18)})}catch(e){}}
 function togSound(){SOUND=!SOUND;try{localStorage.setItem('studiestart.sound',SOUND?'1':'0')}catch(e){}if(SOUND)snd(1);render()}
 function bestUp(k,v){const old=BEST[k]||0;if(v>old){BEST[k]=v;try{localStorage.setItem('studiestart.best',JSON.stringify(BEST))}catch(e){}return old>0?' 🏆 Nieuw record!':''}return old?` (record: ${old})`:''}
@@ -578,12 +525,12 @@ function gExam(){
  const a=document.getElementById('ans');if(a)a.focus()}
 function examNext(){const e=document.getElementById('ans');g.ans.push(e?e.value:'');g.i++;
  if(g.i>=g.deck.length){let sc=0;g.deck.forEach((c,i)=>{const ok=accepts(g.ans[i],c.ans)===2;mark(c,ok);if(ok)sc++});addPts(sc*2);g.done=true}render()}
-const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto,popA,duelA,duelNext,setTheme,setFont,copyTxt,shareScore,showHelp,closeDlg,pomoToggle,pomoReset,sayWotd,pinBook,printList,setVib,filterBook};
+const FN={playCh,addTo,addCh,togH,togO,togHard,clearSel,backGames,togSound,say,scL,scBack,scNext,matL,matR,surA,examNext,acceptTerms,pastePhoto,exportData,pickImport,askDel,cancelDel,confirmDel,startRen,saveRen,cancelRen,doAdd,delBook,delCard,start,pickQ,flip,addCat,flashFlip,flashMiss,flashKnow,flashAgain,quizNext,checkType,typeNext,tfA,tfNext,hg,hangNext,raceA,pickPhoto,popA,duelA,duelNext,setTheme,setFont,copyTxt};
 function run(c){let m;c=c.trim();
  if(m=c.match(/^go\('(\w+)'(?:,\{(id|edit|own|photo):'([^']*)'\})?\)/)){go(m[1],m[2]?{[m[2]]:m[3]}:{});return}
  if((m=c.match(/^(\w+)\(\s*'?([^')]*)'?\s*\)/))&&FN[m[1]]){const a=m[2];FN[m[1]](a===''?undefined:(isNaN(a)?a:+a))}}
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-c]');if(t&&!t.disabled){e.preventDefault();run(t.getAttribute('data-c'))}});
-['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const t=e.target.closest&&e.target.closest('[data-i]');if(!t)return;const k=t.getAttribute('data-i');if(k==='src'){s.id=t.value;s.selH=[];s.selO=[];s.hard=false;render()}else if(k==='goal'){GOAL=+t.value||20;try{localStorage.setItem('studiestart.goal',GOAL)}catch(e){}render()}else if(k.indexOf('mv:')===0){const c=bk().cards[+k.slice(3)];if(c){const v=+t.value||0;if(v)c.h=v;else delete c.h;s.open=v;save();book()}}else if(k.indexOf('mo:')===0){const c=bk().cards[+k.slice(3)];if(c){if(t.value)c.o=t.value;else delete c.o;save();book()}}else if(k==='theme')setTheme(t.value);else if(k==='font')setFont(t.value);else if(k==='vib')setVib(t.value);else if(k==='bq')filterBook(t.value);else if(k==='dir')DIR=t.value;else if(k==='lang'){OLANG=t.value;try{localStorage.setItem('studiestart.lang',OLANG)}catch(e){}}else setF()}));
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{const t=e.target.closest&&e.target.closest('[data-i]');if(!t)return;const k=t.getAttribute('data-i');if(k==='src'){s.id=t.value;s.selH=[];s.selO=[];s.hard=false;render()}else if(k==='goal'){GOAL=+t.value||20;try{localStorage.setItem('studiestart.goal',GOAL)}catch(e){}render()}else if(k.indexOf('mv:')===0){const c=bk().cards[+k.slice(3)];if(c){const v=+t.value||0;if(v)c.h=v;else delete c.h;s.open=v;save();book()}}else if(k.indexOf('mo:')===0){const c=bk().cards[+k.slice(3)];if(c){if(t.value)c.o=t.value;else delete c.o;save();book()}}else if(k==='theme')setTheme(t.value);else if(k==='font')setFont(t.value);else if(k==='dir')DIR=t.value;else if(k==='lang'){OLANG=t.value;try{localStorage.setItem('studiestart.lang',OLANG)}catch(e){}}else setF()}));
 document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.tagName==='DETAILS'&&d.dataset.h!==undefined){const k=+d.dataset.h;if(d.open)s.open=k;else if(s.open===k)s.open=null}},true);
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('[data-c]:not(button)')){e.preventDefault();run(e.target.getAttribute('data-c'));return}if(e.key==='Enter'&&e.target.id==='rn'&&s.ren){e.preventDefault();saveRen(s.ren);return}if(e.key==='Enter'&&e.target.id==='ans'&&g&&(g.t==='type'||g.t==='exam')){e.preventDefault();if(g.t==='exam')examNext();else checkType()}});
 render();
